@@ -8,7 +8,7 @@
 
 import UIKit
 
-@objc public protocol HSCycleGalleryViewDelegate: class {
+@objc public protocol HSCycleGalleryViewDelegate: AnyObject {
 
 	func numberOfItemInCycleGalleryView(_ cycleGalleryView: HSCycleGalleryView) -> Int
 	func changePageControl(currentIndex: Int)
@@ -29,8 +29,23 @@ public class HSCycleGalleryView: UIView {
 			collectionView.backgroundColor = contentBackgroundColor
 		}
 	}
+    
+    public var itemWidth = 200.0 {
+            didSet {
+                customLayout.itemWidth = itemWidth
+                collectionView.collectionViewLayout.invalidateLayout()
+            }
+        }
+
+        public var itemHeight = 200.0 {
+            didSet {
+                customLayout.itemHeight = itemHeight
+                collectionView.collectionViewLayout.invalidateLayout()
+            }
+        }
 
 	private var collectionView: UICollectionView!
+    private var customLayout: HSCycleGalleryViewLayout!
 	private let groupCount = 200
 	private var indexArr = [Int]()
 	private var dataNum: Int = 0
@@ -43,8 +58,10 @@ public class HSCycleGalleryView: UIView {
 
 	override public init(frame: CGRect) {
 		super.init(frame: frame)
-
-		collectionView = UICollectionView(frame: frame, collectionViewLayout: HSCycleGalleryViewLayout())
+        customLayout = HSCycleGalleryViewLayout()
+                customLayout.itemWidth = itemWidth
+                customLayout.itemHeight = itemHeight
+		collectionView = UICollectionView(frame: frame, collectionViewLayout: customLayout)
 		collectionView.showsHorizontalScrollIndicator = false
 		collectionView.showsVerticalScrollIndicator = false
 		collectionView.backgroundColor = contentBackgroundColor

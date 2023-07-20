@@ -19,6 +19,8 @@ class TestViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = UIColor.white
         cycleGalleryView = HSCycleGalleryView(frame: CGRect(x: 0, y: 40, width: UIScreen.main.bounds.width, height: 200))
+        cycleGalleryView.itemWidth = 60 // Set the desired item width here
+        cycleGalleryView.itemHeight = 600 // Set t
         cycleGalleryView.contentBackgroundColor = UIColor.lightGray
         cycleGalleryView.autoScrollInterval = 2
         cycleGalleryView.register(cellClass: TestCollectionViewCell.self, forCellReuseIdentifier: "TestCollectionViewCell")
@@ -35,6 +37,10 @@ class TestViewController: UIViewController {
 
 
 extension TestViewController: HSCycleGalleryViewDelegate {
+    func changePageControl(currentIndex: Int) {
+        //
+    }
+    
     func numberOfItemInCycleGalleryView(_ cycleGalleryView: HSCycleGalleryView) -> Int {
         return colors.count
     }
