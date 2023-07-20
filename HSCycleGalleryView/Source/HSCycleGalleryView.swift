@@ -182,7 +182,7 @@ extension HSCycleGalleryView: UICollectionViewDelegate, UICollectionViewDataSour
 		let index = indexArr[indexPath.row]
 		let dataIndex = index % dataNum
 		let cell = collectionView.cellForItem(at: indexPath) ?? UICollectionViewCell()
-
+        
 		delegate?.cycleGalleryView?(self, didSelectItemCell: cell, at: dataIndex)
 	}
 
@@ -196,6 +196,15 @@ extension HSCycleGalleryView: UICollectionViewDelegate, UICollectionViewDataSour
 		currentIndexPath = IndexPath(item: groupCount / 2 * dataNum + index, section: 0)
 		collectionView.scrollToItem(at: currentIndexPath, at: .centeredHorizontally, animated: false)
 	}
+    
+    public func scrollViewDidScroll(_ scrollView: UIScrollView) {
+            // Calculate the index based on the content offset and item size
+            let itemWidth = customLayout.itemWidth
+            let offset = scrollView.contentOffset.x + (scrollView.frame.width / 2)
+            let index = Int(offset / itemWidth) % dataNum
+
+            delegate?.changePageControl(currentIndex: index)
+        }
 
 	public func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
 		addTimer()

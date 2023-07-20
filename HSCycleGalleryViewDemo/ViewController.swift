@@ -37,7 +37,7 @@ class ViewController: UIViewController {
 
 extension ViewController: HSCycleGalleryViewDelegate {
     func changePageControl(currentIndex: Int) {
-        //
+        print("PAGE: ", currentIndex)
     }
     
     
