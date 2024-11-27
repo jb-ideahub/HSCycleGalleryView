@@ -23,6 +23,20 @@ public class HSCycleGalleryView: UIView {
 
 	/// if set to 0, the gallery view will not auto scroll
 	public var autoScrollInterval: Double = 3
+    
+    public var itemSpacing: CGFloat = 20 {
+        didSet {
+            customLayout.interItemSpacing = itemSpacing
+            collectionView.collectionViewLayout.invalidateLayout()
+        }
+    }
+    
+    public var isZoomEnabled: Bool = true {
+        didSet {
+            customLayout.isZoomEnabled = isZoomEnabled
+            collectionView.collectionViewLayout.invalidateLayout()
+        }
+    }
 
 	public var contentBackgroundColor = UIColor.white {
 		didSet {
@@ -90,20 +104,23 @@ public class HSCycleGalleryView: UIView {
 
 extension HSCycleGalleryView {
 
-	public func reloadData() {
-		guard let dataNum = delegate?.numberOfItemInCycleGalleryView(self) else { return }
-		self.dataNum = dataNum
-		indexArr.removeAll()
-		for _ in 0 ..< groupCount {
-			for j in 0 ..< dataNum {
-				indexArr.append(j)
-			}
-		}
-		collectionView.reloadData()
-		// Scroll to the middle
-		currentIndexPath = IndexPath(item: groupCount / 2 * dataNum, section: 0)
-		collectionView.scrollToItem(at: currentIndexPath, at: .centeredHorizontally, animated: false)
-	}
+    public func reloadData() {
+        guard let dataNum = delegate?.numberOfItemInCycleGalleryView(self) else { return }
+        self.dataNum = dataNum
+        indexArr = Array(0..<dataNum) // Use only the actual data indices
+        collectionView.reloadData()
+        
+        // Safely handle cases with fewer than 2 items
+        if dataNum == 1 {
+            // Focus on the first (and only) item
+            currentIndexPath = IndexPath(item: 0, section: 0)
+        } else {
+            // Focus on the 2nd item
+            currentIndexPath = IndexPath(item: 1, section: 0)
+        }
+        
+        collectionView.scrollToItem(at: currentIndexPath, at: .centeredHorizontally, animated: false)
+    }
 
 	public func register(cellClass: AnyClass?, forCellReuseIdentifier identifier: String) {
 		self.collectionView.register(cellClass, forCellWithReuseIdentifier: identifier)
@@ -137,31 +154,27 @@ extension HSCycleGalleryView {
 		RunLoop.main.add(timer!, forMode: RunLoop.Mode.common)
 	}
 
-	@objc func autoScroll() {
-		if self.superview == nil || self.window == nil {
-			return
-		}
-		self.scrollToNextIndex()
-	}
+    @objc func autoScroll() {
+        guard self.superview != nil, self.window != nil else { return }
+        guard dataNum > 1 else { return } // Stop auto-scroll if only 1 item exists
+        
+        self.scrollToNextIndex()
+    }
 
-	private func scrollToNextIndex() {
-		var currentIndex = currentIndexPath.row
-		if (currentIndex + 1) >= indexArr.count {
-			currentIndex = groupCount / 2 * self.dataNum
-			collectionView.scrollToItem(at: IndexPath(item: currentIndex, section: 0), at: .centeredHorizontally, animated: false)
-		}
-		let nextIndex = currentIndex + 1
-		collectionView.scrollToItem(at: IndexPath(item: nextIndex, section: 0), at: .centeredHorizontally, animated: true)
-		currentIndexPath = IndexPath(item: nextIndex, section: 0)
-
-		if dataNum > 0 {
-			let pointInView = self.convert(collectionView.center, to: collectionView)
-			let indexPathNow = collectionView.indexPathForItem(at: pointInView)
-			let index = ((indexPathNow?.row ?? 0) + 1) % dataNum
-
-			delegate?.changePageControl(currentIndex: index)
-		}
-	}
+    private func scrollToNextIndex() {
+        guard dataNum > 1 else { return } // Stop auto-scroll if only 1 item exists
+        
+        var currentIndex = currentIndexPath.row
+        if (currentIndex + 1) >= dataNum {
+            return // Stop scrolling beyond the last item
+        }
+        
+        let nextIndex = currentIndex + 1
+        collectionView.scrollToItem(at: IndexPath(item: nextIndex, section: 0), at: .centeredHorizontally, animated: true)
+        currentIndexPath = IndexPath(item: nextIndex, section: 0)
+        
+        delegate?.changePageControl(currentIndex: nextIndex)
+    }
 }
 
 extension HSCycleGalleryView: UICollectionViewDelegate, UICollectionViewDataSource {
@@ -186,16 +199,16 @@ extension HSCycleGalleryView: UICollectionViewDelegate, UICollectionViewDataSour
 		delegate?.cycleGalleryView?(self, didSelectItemCell: cell, at: dataIndex)
 	}
 
-	public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-		let pointInView = self.convert(collectionView.center, to: collectionView)
-		let indexPathNow = collectionView.indexPathForItem(at: pointInView)
-		let index = (indexPathNow?.row ?? 0) % dataNum
-		// Reset to the middle position
-
-		delegate?.changePageControl(currentIndex: index)
-		currentIndexPath = IndexPath(item: groupCount / 2 * dataNum + index, section: 0)
-		collectionView.scrollToItem(at: currentIndexPath, at: .centeredHorizontally, animated: false)
-	}
+    public func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        guard dataNum > 0 else { return }
+        
+        let pointInView = self.convert(collectionView.center, to: collectionView)
+        let indexPathNow = collectionView.indexPathForItem(at: pointInView)
+        let index = indexPathNow?.row ?? 0
+        
+        currentIndexPath = IndexPath(item: index, section: 0)
+        delegate?.changePageControl(currentIndex: index)
+    }
     
     public func scrollViewDidScroll(_ scrollView: UIScrollView) {
             // Calculate the index based on the content offset and item size
